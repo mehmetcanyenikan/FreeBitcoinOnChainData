@@ -1,8 +1,9 @@
-import requests
 import pandas as pd
-from abc import ABC, abstractmethod
+from connection import DataReadCondition
+from data_processing import  DictToDataFrame
 
-# Blockchain.com API URLs
+
+
 urls = {
         'total_circulating_bitcoin' : 'total-bitcoins',
         'market_price_usd' : 'market-price',
@@ -35,57 +36,16 @@ urls = {
         }
 
 
-#### for Data Read ####
-class DataReadAPI(ABC):
-    def __init__(self, api_url : str):
-        self.api_url = api_url
-    
-    @abstractmethod
-    def read_json(self) -> dict:
-        pass
-        
-
-
-class BlockchainCom(DataReadAPI):
-    
-    def read_json(self) -> dict:
-        try:
-            return requests.get(self.api_url).json()
-        except: 
-            return print("An error")
-
-
-#### for convert data ####
-
-class ConvertData(ABC):
-    def __init__(self, dictionary : dict):
-        self.dictionary = dictionary
-    
-    @abstractmethod
-    def dict_to(self):
-        pass
-
-class DictToDataFrame(ConvertData):
-    def dict_to(self):
-        return pd.DataFrame(self.dictionary)
-
-
-class index_set:
-    def __init__(self, df : pd.DataFrame):
-        self.df = df
-    
-    def setting(self):
-        return self.df.set_index('x')
 
 def main():
     
     for url in urls:
-        blockchain_com = BlockchainCom(api_url= 'https://api.blockchain.info/charts/{}?timespan=3years&format=json'.format(urls[url]))
-        df = DictToDataFrame(blockchain_com.read_json()['values']).dict_to()
-        
-        indexing = index_set(df = df)
-        df_time_index = indexing.setting()
-        print(type(df_time_index))
-        
+        reader = DataReadCondition.create_reader('https://api.blockchain.info/charts/{}?timespan=4years&rollingAverage=12hours&format=json'.format(urls[url]))
+        df = DictToDataFrame(reader.read()['values']).dict_to()
+        df = df.set_index('x')
+        print(df)
+
+
+
 if __name__ == '__main__':
     main()
